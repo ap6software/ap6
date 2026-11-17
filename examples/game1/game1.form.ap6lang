@@ -1,0 +1,72 @@
+// game1.form.ap6lang -- the GAME1 form: the two pages and every object,
+// OWNED BY AP6.EDITOR (Phase 4.1B). This file is printed whole by the
+// one AP6 Language printer on every save; only this leading comment
+// survives a save, so it holds what a reader of the tree needs, and the
+// logic (game1.logic.ap6lang) holds every other explanation. Compiled
+// with the generated resources first and the logic last:
+//
+//     ap6-compile game1.ap6 game1.resources.ap6lang game1.form.ap6lang game1.logic.ap6lang
+//
+// THE TREE follows the legacy paint order exactly (CUSTOB~1.PAS PaintSys
+// paints the control list from its last entry to its first, MYLIST.PAS
+// groups the list by NumList then creation order): in AP6 a later child
+// paints over an earlier one, so each page lists its children bottom to
+// top. ONE DELIBERATE MOVE: Room1's H5 (6H.BUT) is declared ABOVE the box
+// panel rather than beneath it (the original's box panel and animation
+// take no pointer input; an AP6 panel and image do). The picture is
+// identical: no box frame has an opaque pixel inside H5's rectangle.
+//
+// WHAT EACH NAME IS (the legacy object; its picture ids and masks are
+// the importer's, game1.resources.ap6lang):
+//   RoomSelect        TRoomSelect / FROOMA.pas, background FROOMA.bk
+//     But1, But2      CMyButton0 (ROOMA\BUT1.BUT -> code 201), CMyButton1 (ROOMA\BUT2.BUT -> 202)
+//     BExit, AExit    TMyButton MAIN1\BEXIT.BUT, TMyAnimMove MAIN1\EANIM.ANM
+//   Room1             TRoom1 / FROOM1.pas, background FROOM1.bk
+//     Box, Box.Anim   CMyCustomPanel0 (303,266 280x210) clipping CMyAnim1 (ROOM1\BOX.ANM)
+//     H0..H12         h0..h12, ROOM1H.BUT .. 13H.BUT (the objects in the room)
+//     B0..B12         b0..b12, ROOM1B.BUT .. 13B.BUT (the same objects in the box)
+//     BExit, AExit    as on RoomSelect
+// Every button image declares PointerMaskImage = its TFindBitmap resource
+// (Phase 4.0B): the click lands exactly where the Delphi mask took it.
+
+panel RoomSelect { Left = 0; Top = 0; Width = 640; Height = 480;
+    image { Left = 0; Top = 0; Width = 640; Height = 480; Image = 5000; }
+    image But1 { Left = 33; Top = 3; Width = 272; Height = 422; Image = 5021; PointerMaskImage = 5103; }
+    image But2 { Left = 325; Top = -1; Width = 273; Height = 426; Image = 5022; PointerMaskImage = 5104; }
+    image BExit { Left = 1; Top = 387; Width = 106; Height = 91; Image = 5002; PointerMaskImage = 5102; }
+    image AExit { Left = 129; Top = 408; Width = 94; Height = 67; Image = 5008; }
+}
+panel Room1 { Left = 0; Top = 0; Width = 640; Height = 480;
+    image { Left = 0; Top = 0; Width = 640; Height = 480; Image = 5001; }
+    panel Box { Left = 303; Top = 266; Width = 280; Height = 210;
+        image Anim { Left = 0; Top = 0; Width = 300; Height = 207; Image = 5023; }
+    }
+    image H5 { Left = 310; Top = 284; Width = 62; Height = 43; Image = 5060; PointerMaskImage = 5110; }
+    image B0 { Left = 380; Top = 316; Width = 139; Height = 53; Image = 5076; PointerMaskImage = 5118; }
+    image B3 { Left = 508; Top = 296; Width = 68; Height = 51; Image = 5082; PointerMaskImage = 5121; }
+    image B1 { Left = 360; Top = 297; Width = 56; Height = 66; Image = 5078; PointerMaskImage = 5119; }
+    image B2 { Left = 444; Top = 296; Width = 64; Height = 66; Image = 5080; PointerMaskImage = 5120; }
+    image B4 { Left = 383; Top = 314; Width = 60; Height = 54; Image = 5084; PointerMaskImage = 5122; }
+    image B6 { Left = 396; Top = 341; Width = 27; Height = 30; Image = 5088; PointerMaskImage = 5124; }
+    image B7 { Left = 362; Top = 306; Width = 32; Height = 45; Image = 5090; PointerMaskImage = 5125; }
+    image B9 { Left = 426; Top = 323; Width = 32; Height = 45; Image = 5094; PointerMaskImage = 5127; }
+    image B12 { Left = 425; Top = 318; Width = 57; Height = 48; Image = 5100; PointerMaskImage = 5130; }
+    image B10 { Left = 449; Top = 320; Width = 20; Height = 40; Image = 5096; PointerMaskImage = 5128; }
+    image H0 { Left = 74; Top = 249; Width = 107; Height = 126; Image = 5050; PointerMaskImage = 5105; }
+    image B8 { Left = 494; Top = 305; Width = 32; Height = 46; Image = 5092; PointerMaskImage = 5126; }
+    image B11 { Left = 425; Top = 345; Width = 17; Height = 24; Image = 5098; PointerMaskImage = 5129; }
+    image B5 { Left = 452; Top = 318; Width = 58; Height = 45; Image = 5086; PointerMaskImage = 5123; }
+    image H12 { Left = 492; Top = 144; Width = 45; Height = 47; Image = 5074; PointerMaskImage = 5117; }
+    image H6 { Left = 424; Top = 139; Width = 31; Height = 54; Image = 5062; PointerMaskImage = 5111; }
+    image H7 { Left = 480; Top = 71; Width = 32; Height = 57; Image = 5064; PointerMaskImage = 5112; }
+    image H11 { Left = 428; Top = 203; Width = 19; Height = 42; Image = 5072; PointerMaskImage = 5116; }
+    image H10 { Left = 449; Top = 205; Width = 19; Height = 40; Image = 5070; PointerMaskImage = 5115; }
+    image H8 { Left = 442; Top = 72; Width = 32; Height = 57; Image = 5066; PointerMaskImage = 5113; }
+    image H9 { Left = 518; Top = 71; Width = 32; Height = 57; Image = 5068; PointerMaskImage = 5114; }
+    image H2 { Left = 195; Top = 249; Width = 64; Height = 85; Image = 5054; PointerMaskImage = 5107; }
+    image H3 { Left = 304; Top = 203; Width = 94; Height = 50; Image = 5056; PointerMaskImage = 5108; }
+    image H1 { Left = 295; Top = 79; Width = 57; Height = 79; Image = 5052; PointerMaskImage = 5106; }
+    image H4 { Left = 196; Top = 421; Width = 60; Height = 58; Image = 5058; PointerMaskImage = 5109; }
+    image BExit { Left = 3; Top = 388; Width = 106; Height = 91; Image = 5002; PointerMaskImage = 5102; }
+    image AExit { Left = 115; Top = 410; Width = 94; Height = 67; Image = 5008; }
+}

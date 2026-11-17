@@ -1,0 +1,419 @@
+// chess.logic.ap6lang -- AP6 Chess: the one scenario ruled for the
+// capability demo (design 2026-09-20 rev. 2, section 6): start, a legal
+// human move, an illegal move refused, the classical computer's reply,
+// check / end of game. Compiled after the form:
+//
+//     ap6-compile chess.ap6 chess.form.ap6lang chess.logic.ap6lang
+//
+// THIS PROGRAM KNOWS NO RULE OF CHESS. Every question -- which squares
+// a piece may go to, whether a move is legal, what the position looks
+// like after it, whether it is check, mate or a draw, what the computer
+// plays -- is asked of the session-local chess service through the
+// ordinary Request channel and answered from the vendored rules library
+// (AP6ChessService.h / AP6ChessCore.h). The program never reads a FEN:
+// it carries the FEN string the service gave it and paints the 64 piece
+// codes the service listed. Nothing here is random.
+//
+// THE SERVICE IS STATELESS; THE GAME LIVES HERE. Fen, History (the
+// canonical position keys of this game, oldest first, the current
+// position's key last -- the service returns the list with the new key
+// appended and the program keeps it), Level, Selected and Pending are
+// this program's variables; a save carries them and a rebuild restores
+// the position, the history and a pending computer move.
+//
+// THE COMPUTER MOVES ON THE NEXT FRAME, NEVER IN THE CLICK. A legal
+// human move arrives as a response (Code 120): the board is repainted
+// from it, Pending is set and a 1 ms Timer is armed. The host's next
+// AP6_SessionAdvance fires Code 130, which asks for best(Level). The
+// search is synchronous and bounded by the level's node budget, so the
+// frame that shows the human's move is already painted when it runs,
+// and there is no Cancel because nothing could act on one (design 3.4).
+//
+// SIDES ARE FIXED: the human plays White (side 0) and moves first; the
+// classical engine plays Black (side 1).
+
+// ====================================================================
+// The service and the sides
+// ====================================================================
+
+string ServiceKey = "ap6.local.chess.v1";
+number HumanSide = 0;
+number EngineSide = 1;
+
+// A piece picture is the AP6.GamesResources chess set at 3999 + the
+// service's piece code (1..6 white P N B R Q K, 7..12 black); 0 = empty.
+number PieceImageBase = 3999;
+
+string StartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+value[] NoHistory = [];
+
+// Request codes: the op that was asked, so a response knows what it
+// answers. 200 is the channel's own failure (transport, refused,
+// malformed) -- never a chess answer, which always arrives as ok/error
+// inside the response array.
+number CodeState = 100;
+number CodeLegal = 110;
+number CodeMove = 120;
+number CodeTick = 130;
+number CodeBest = 140;
+number CodeFail = 200;
+
+// ====================================================================
+// The state a save carries
+// ====================================================================
+
+persisted string Fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+persisted mutable value[] History = [];
+persisted number Level = 2;
+persisted number Pending = 0;
+persisted number Finished = 0;
+
+// The computer's last reply, as the service reported it: the same on
+// every host for the same game (the engine is deterministic).
+persisted string LastMove = "";
+persisted number LastScore = 0;
+persisted number LastDepth = 0;
+persisted number LastNodes = 0;
+
+// ====================================================================
+// Run-time only
+// ====================================================================
+
+number Selected = -1;
+number FromSq = 0;
+number ToSq = 0;
+number Scratch = 0;
+number PieceCode = 0;
+
+mutable value[] Req = [];
+mutable value[] Resp = [];
+mutable value[] Cells = [];
+mutable value[] Targets = [];
+
+// The click targets (the whole square), the pictures (20 x 60, the
+// true aspect of the supplied pieces) and the markers, by square.
+ref[] Hits = [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15,
+    P16, P17, P18, P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31,
+    P32, P33, P34, P35, P36, P37, P38, P39, P40, P41, P42, P43, P44, P45, P46, P47,
+    P48, P49, P50, P51, P52, P53, P54, P55, P56, P57, P58, P59, P60, P61, P62, P63];
+ref[] Pictures = [V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15,
+    V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31,
+    V32, V33, V34, V35, V36, V37, V38, V39, V40, V41, V42, V43, V44, V45, V46, V47,
+    V48, V49, V50, V51, V52, V53, V54, V55, V56, V57, V58, V59, V60, V61, V62, V63];
+ref[] Marks = [M0, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15,
+    M16, M17, M18, M19, M20, M21, M22, M23, M24, M25, M26, M27, M28, M29, M30, M31,
+    M32, M33, M34, M35, M36, M37, M38, M39, M40, M41, M42, M43, M44, M45, M46, M47,
+    M48, M49, M50, M51, M52, M53, M54, M55, M56, M57, M58, M59, M60, M61, M62, M63];
+
+string[] LevelNames = ["Beginner", "Easy", "Medium", "Hard"];
+string[] Files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+// ====================================================================
+// Procedures
+// ====================================================================
+
+void ClearMarks()
+{
+    for (number i = 0; i < Marks.Count; i = i + 1)
+        Marks[i].Text = "";
+}
+
+void ShowLevel()
+{
+    Scratch = Level - 1;
+    LevelText.Text = "Level: " + LevelNames[Scratch];
+}
+
+void ShowSearch()
+{
+    if (LastNodes > 0)
+    {
+        SearchText.Text = "depth " + ToText(LastDepth) + "  score " + ToText(LastScore);
+        NodesText.Text = ToText(LastNodes) + " nodes";
+    }
+    else
+    {
+        SearchText.Text = "";
+        NodesText.Text = "";
+    }
+}
+
+// FromSq/ToSq -> "e2e4": the file letter and the rank digit of a square
+// index are arithmetic on the index, not a rule.
+void NameMove()
+{
+    Scratch = FromSq mod 8;
+    LastMove = Files[Scratch] + ToText(FromSq div 8 + 1);
+    Scratch = ToSq mod 8;
+    LastMove = LastMove + Files[Scratch] + ToText(ToSq div 8 + 1);
+}
+
+// The board, the turn and the game state, ALL from the response in
+// Resp: the 64 piece codes (index 11), the FEN (2), the history (14),
+// the side to move (4) and the flags (5..9). The program keeps what the
+// service said and shows it; it decides nothing about the position.
+void Paint()
+{
+    Cells = AsArray(ValueAt(Resp, 11));
+
+    for (number i = 0; i < Pictures.Count; i = i + 1)
+    {
+        PieceCode = AsNumber(ValueAt(Cells, i));
+
+        if (PieceCode == 0)
+            Pictures[i].Image = 0;
+        else
+            Pictures[i].Image = PieceImageBase + PieceCode;
+    }
+
+    Fen = AsString(ValueAt(Resp, 2));
+    History = AsArray(ValueAt(Resp, 14));
+
+    Scratch = AsNumber(ValueAt(Resp, 4));
+
+    if (Scratch == HumanSide)
+        Turn.Text = "White to move";
+    else
+        Turn.Text = "Black to move";
+
+    Finished = 0;
+    State.Text = "";
+
+    if (AsBool(ValueAt(Resp, 5)))
+        State.Text = "Check";
+
+    if (AsBool(ValueAt(Resp, 8)))
+    {
+        Finished = 1;
+        Scratch = AsNumber(ValueAt(Resp, 9));
+
+        if (Scratch == 2) State.Text = "Draw: stalemate";
+        if (Scratch == 3) State.Text = "Draw: insufficient material";
+        if (Scratch == 4) State.Text = "Draw: fifty moves";
+        if (Scratch == 5) State.Text = "Draw: repetition";
+    }
+
+    if (AsBool(ValueAt(Resp, 6)))
+    {
+        Finished = 1;
+        Scratch = AsNumber(ValueAt(Resp, 4));
+
+        if (Scratch == HumanSide)
+            State.Text = "Checkmate: Black wins";
+        else
+            State.Text = "Checkmate: White wins";
+    }
+
+    if (Finished == 1)
+        Turn.Text = "Game over";
+}
+
+// A square was clicked while it is the human's turn. First click: ask
+// which squares this piece may go to (an empty square or a black piece
+// has none, so nothing is selected). Second click: the same square
+// deselects; any other square is offered to the service as a move and
+// the service, not this program, says whether it is legal.
+void Clicked(number square)
+{
+    if (Selected < 0)
+    {
+        FromSq = square;
+        Req = MakeArray(ServiceKey, "legal", Fen, History, square);
+        Request(Req, CodeLegal, CodeFail, Resp);
+    }
+    else
+    {
+        if (square == Selected)
+        {
+            Selected = -1;
+            ClearMarks();
+        }
+        else
+        {
+            FromSq = Selected;
+            ToSq = square;
+            Req = MakeArray(ServiceKey, "move", Fen, History, Selected, square, 0);
+            Request(Req, CodeMove, CodeFail, Resp);
+        }
+    }
+}
+
+void NewGameNow()
+{
+    Fen = StartFen;
+    History = NoHistory;
+    Pending = 0;
+    Finished = 0;
+    Selected = -1;
+    LastMove = "";
+    LastScore = 0;
+    LastDepth = 0;
+    LastNodes = 0;
+    ClearMarks();
+    ShowSearch();
+    MoveText.Text = "";
+    Req = MakeArray(ServiceKey, "state", Fen, History);
+    Request(Req, CodeState, CodeFail, Resp);
+}
+
+// ====================================================================
+// Load: the saved game, as saved
+// ====================================================================
+
+on Load
+{
+    ClearMarks();
+    ShowLevel();
+    ShowSearch();
+    Selected = -1;
+
+    if (LastMove != "")
+        MoveText.Text = "Black: " + LastMove;
+
+    Req = MakeArray(ServiceKey, "state", Fen, History);
+    Request(Req, CodeState, CodeFail, Resp);
+
+    // A save made between the human's move and the computer's frame:
+    // the computer still owes a move, on the next frame as always.
+    if (Pending == 1 && Finished == 0)
+        Timer(1, code: 130);
+}
+
+on Code(100)
+{
+    if (AsBool(ValueAt(Resp, 0)))
+        Paint();
+    else
+        State.Text = "service: " + AsString(ValueAt(Resp, 1));
+}
+
+// ====================================================================
+// The human's move
+// ====================================================================
+
+// A label never takes the pointer, so a click on a square arrives from
+// the square-sized image P<n> above the picture: the square is that
+// image's index in Hits.
+on Board.Click(ref source)
+{
+    if (Pending == 0 && Finished == 0)
+    {
+        for (number i = 0; i < Hits.Count; i = i + 1)
+        {
+            if (source == Hits[i])
+                Clicked(i);
+        }
+    }
+}
+
+// legal(from): highlight exactly the squares the service listed.
+on Code(110)
+{
+    ClearMarks();
+    Selected = -1;
+
+    if (AsBool(ValueAt(Resp, 0)))
+    {
+        Targets = AsArray(ValueAt(Resp, 12));
+
+        if (Count(Targets) > 0)
+        {
+            Selected = FromSq;
+            Marks[FromSq].Text = "◆";
+
+            for (number k = 0; k < Marks.Count; k = k + 1)
+            {
+                if (k < Count(Targets))
+                {
+                    Scratch = AsNumber(ValueAt(Targets, k));
+                    Marks[Scratch].Text = "●";
+                }
+            }
+        }
+    }
+}
+
+// move(from, to): ok -> the new position is painted NOW, the history
+// grew by one key, and the computer's turn is scheduled for the next
+// frame. Refused -> Fen and History are exactly what they were; only
+// the selection is dropped.
+on Code(120)
+{
+    ClearMarks();
+    Selected = -1;
+
+    if (AsBool(ValueAt(Resp, 0)))
+    {
+        NameMove();
+        MoveText.Text = "You: " + LastMove;
+        Paint();
+
+        if (Finished == 0)
+        {
+            Pending = 1;
+            Turn.Text = "Black is thinking";
+            Timer(1, code: 130);
+        }
+    }
+}
+
+// ====================================================================
+// The computer's move, on the frame after the human's
+// ====================================================================
+
+on Code(130)
+{
+    if (Pending == 1 && Finished == 0)
+    {
+        Req = MakeArray(ServiceKey, "best", Fen, History, Level);
+        Request(Req, CodeBest, CodeFail, Resp);
+    }
+}
+
+// best(level): the reply, the position after it, and the search figures
+// the service reported (identical on every host for the same game).
+on Code(140)
+{
+    Pending = 0;
+
+    if (AsBool(ValueAt(Resp, 0)))
+    {
+        Targets = AsArray(ValueAt(Resp, 10));
+        FromSq = AsNumber(ValueAt(Targets, 0));
+        ToSq = AsNumber(ValueAt(Targets, 1));
+        NameMove();
+        MoveText.Text = "Black: " + LastMove;
+
+        Targets = AsArray(ValueAt(Resp, 13));
+        LastScore = AsNumber(ValueAt(Targets, 0));
+        LastDepth = AsNumber(ValueAt(Targets, 1));
+        LastNodes = AsNumber(ValueAt(Targets, 2));
+        ShowSearch();
+
+        Paint();
+    }
+    else
+    {
+        State.Text = "service: " + AsString(ValueAt(Resp, 1));
+    }
+}
+
+// The channel itself failed (never a chess answer): say so, owe nothing.
+on Code(200)
+{
+    Pending = 0;
+    Selected = -1;
+    ClearMarks();
+    State.Text = "request error";
+}
+
+// ====================================================================
+// Levels and a new game
+// ====================================================================
+
+on Level1.Click { Level = 1; ShowLevel(); }
+on Level2.Click { Level = 2; ShowLevel(); }
+on Level3.Click { Level = 3; ShowLevel(); }
+on Level4.Click { Level = 4; ShowLevel(); }
+
+on NewGame.Click { NewGameNow(); }

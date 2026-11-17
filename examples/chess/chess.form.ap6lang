@@ -1,0 +1,364 @@
+// chess.form.ap6lang -- the AP6 Chess board: the tree only, every
+// object named, nothing computed. Compiled with the logic last:
+//
+//     ap6-compile chess.ap6 chess.form.ap6lang chess.logic.ap6lang
+//
+// THE BOARD is 64 squares Q0..Q63 in the chess service's square order
+// (0 = a1, 7 = h1, 56 = a8, 63 = h8), white at the bottom: square n
+// sits at Left = (n mod 8) * 60, Top = (7 - n div 8) * 60. Each square
+// is a coloured panel holding three children, bottom to top:
+//   V<n>  the piece picture, 20 x 60 centred -- the AP6.GamesResources
+//         chess pictures are 221 x 664 with the piece standing on the
+//         bottom edge, so the square's full height at the true aspect
+//         keeps a king tall and a pawn short; Image 0 = empty, a piece
+//         is 3999 + its service code;
+//   P<n>  the click target, the whole square, Image 0 (it draws
+//         nothing and takes the pointer everywhere in the square);
+//   M<n>  the marker label the logic writes into (a target dot, the
+//         selected diamond, or nothing). A label never takes the
+//         pointer, so every click on a square arrives from P<n> and the
+//         logic looks the square up in Hits.
+//
+// THE SIDE PANEL carries the turn, the game state, the level buttons
+// (the four published levels of AP6ChessCore.h -- no Expert), New
+// Game, and the computer's last move with its search figures. There
+// is no Cancel: the search is bounded by the level's node budget and
+// nothing could stop it (design 3.4).
+
+panel Board { Left = 0; Top = 0; Width = 480; Height = 480; BackgroundColor = 4;
+    panel Q0 { Left = 0; Top = 420; Width = 60; Height = 60; BackgroundColor = 2;
+        image V0 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P0 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M0 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q1 { Left = 60; Top = 420; Width = 60; Height = 60; BackgroundColor = 11;
+        image V1 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P1 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M1 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q2 { Left = 120; Top = 420; Width = 60; Height = 60; BackgroundColor = 2;
+        image V2 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P2 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M2 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q3 { Left = 180; Top = 420; Width = 60; Height = 60; BackgroundColor = 11;
+        image V3 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P3 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M3 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q4 { Left = 240; Top = 420; Width = 60; Height = 60; BackgroundColor = 2;
+        image V4 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P4 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M4 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q5 { Left = 300; Top = 420; Width = 60; Height = 60; BackgroundColor = 11;
+        image V5 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P5 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M5 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q6 { Left = 360; Top = 420; Width = 60; Height = 60; BackgroundColor = 2;
+        image V6 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P6 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M6 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q7 { Left = 420; Top = 420; Width = 60; Height = 60; BackgroundColor = 11;
+        image V7 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P7 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M7 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q8 { Left = 0; Top = 360; Width = 60; Height = 60; BackgroundColor = 11;
+        image V8 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P8 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M8 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q9 { Left = 60; Top = 360; Width = 60; Height = 60; BackgroundColor = 2;
+        image V9 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P9 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M9 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q10 { Left = 120; Top = 360; Width = 60; Height = 60; BackgroundColor = 11;
+        image V10 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P10 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M10 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q11 { Left = 180; Top = 360; Width = 60; Height = 60; BackgroundColor = 2;
+        image V11 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P11 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M11 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q12 { Left = 240; Top = 360; Width = 60; Height = 60; BackgroundColor = 11;
+        image V12 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P12 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M12 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q13 { Left = 300; Top = 360; Width = 60; Height = 60; BackgroundColor = 2;
+        image V13 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P13 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M13 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q14 { Left = 360; Top = 360; Width = 60; Height = 60; BackgroundColor = 11;
+        image V14 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P14 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M14 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q15 { Left = 420; Top = 360; Width = 60; Height = 60; BackgroundColor = 2;
+        image V15 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P15 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M15 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q16 { Left = 0; Top = 300; Width = 60; Height = 60; BackgroundColor = 2;
+        image V16 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P16 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M16 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q17 { Left = 60; Top = 300; Width = 60; Height = 60; BackgroundColor = 11;
+        image V17 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P17 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M17 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q18 { Left = 120; Top = 300; Width = 60; Height = 60; BackgroundColor = 2;
+        image V18 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P18 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M18 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q19 { Left = 180; Top = 300; Width = 60; Height = 60; BackgroundColor = 11;
+        image V19 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P19 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M19 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q20 { Left = 240; Top = 300; Width = 60; Height = 60; BackgroundColor = 2;
+        image V20 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P20 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M20 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q21 { Left = 300; Top = 300; Width = 60; Height = 60; BackgroundColor = 11;
+        image V21 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P21 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M21 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q22 { Left = 360; Top = 300; Width = 60; Height = 60; BackgroundColor = 2;
+        image V22 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P22 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M22 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q23 { Left = 420; Top = 300; Width = 60; Height = 60; BackgroundColor = 11;
+        image V23 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P23 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M23 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q24 { Left = 0; Top = 240; Width = 60; Height = 60; BackgroundColor = 11;
+        image V24 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P24 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M24 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q25 { Left = 60; Top = 240; Width = 60; Height = 60; BackgroundColor = 2;
+        image V25 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P25 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M25 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q26 { Left = 120; Top = 240; Width = 60; Height = 60; BackgroundColor = 11;
+        image V26 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P26 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M26 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q27 { Left = 180; Top = 240; Width = 60; Height = 60; BackgroundColor = 2;
+        image V27 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P27 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M27 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q28 { Left = 240; Top = 240; Width = 60; Height = 60; BackgroundColor = 11;
+        image V28 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P28 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M28 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q29 { Left = 300; Top = 240; Width = 60; Height = 60; BackgroundColor = 2;
+        image V29 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P29 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M29 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q30 { Left = 360; Top = 240; Width = 60; Height = 60; BackgroundColor = 11;
+        image V30 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P30 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M30 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q31 { Left = 420; Top = 240; Width = 60; Height = 60; BackgroundColor = 2;
+        image V31 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P31 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M31 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q32 { Left = 0; Top = 180; Width = 60; Height = 60; BackgroundColor = 2;
+        image V32 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P32 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M32 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q33 { Left = 60; Top = 180; Width = 60; Height = 60; BackgroundColor = 11;
+        image V33 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P33 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M33 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q34 { Left = 120; Top = 180; Width = 60; Height = 60; BackgroundColor = 2;
+        image V34 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P34 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M34 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q35 { Left = 180; Top = 180; Width = 60; Height = 60; BackgroundColor = 11;
+        image V35 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P35 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M35 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q36 { Left = 240; Top = 180; Width = 60; Height = 60; BackgroundColor = 2;
+        image V36 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P36 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M36 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q37 { Left = 300; Top = 180; Width = 60; Height = 60; BackgroundColor = 11;
+        image V37 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P37 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M37 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q38 { Left = 360; Top = 180; Width = 60; Height = 60; BackgroundColor = 2;
+        image V38 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P38 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M38 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q39 { Left = 420; Top = 180; Width = 60; Height = 60; BackgroundColor = 11;
+        image V39 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P39 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M39 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q40 { Left = 0; Top = 120; Width = 60; Height = 60; BackgroundColor = 11;
+        image V40 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P40 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M40 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q41 { Left = 60; Top = 120; Width = 60; Height = 60; BackgroundColor = 2;
+        image V41 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P41 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M41 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q42 { Left = 120; Top = 120; Width = 60; Height = 60; BackgroundColor = 11;
+        image V42 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P42 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M42 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q43 { Left = 180; Top = 120; Width = 60; Height = 60; BackgroundColor = 2;
+        image V43 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P43 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M43 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q44 { Left = 240; Top = 120; Width = 60; Height = 60; BackgroundColor = 11;
+        image V44 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P44 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M44 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q45 { Left = 300; Top = 120; Width = 60; Height = 60; BackgroundColor = 2;
+        image V45 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P45 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M45 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q46 { Left = 360; Top = 120; Width = 60; Height = 60; BackgroundColor = 11;
+        image V46 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P46 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M46 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q47 { Left = 420; Top = 120; Width = 60; Height = 60; BackgroundColor = 2;
+        image V47 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P47 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M47 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q48 { Left = 0; Top = 60; Width = 60; Height = 60; BackgroundColor = 2;
+        image V48 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P48 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M48 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q49 { Left = 60; Top = 60; Width = 60; Height = 60; BackgroundColor = 11;
+        image V49 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P49 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M49 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q50 { Left = 120; Top = 60; Width = 60; Height = 60; BackgroundColor = 2;
+        image V50 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P50 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M50 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q51 { Left = 180; Top = 60; Width = 60; Height = 60; BackgroundColor = 11;
+        image V51 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P51 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M51 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q52 { Left = 240; Top = 60; Width = 60; Height = 60; BackgroundColor = 2;
+        image V52 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P52 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M52 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q53 { Left = 300; Top = 60; Width = 60; Height = 60; BackgroundColor = 11;
+        image V53 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P53 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M53 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q54 { Left = 360; Top = 60; Width = 60; Height = 60; BackgroundColor = 2;
+        image V54 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P54 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M54 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q55 { Left = 420; Top = 60; Width = 60; Height = 60; BackgroundColor = 11;
+        image V55 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P55 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M55 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q56 { Left = 0; Top = 0; Width = 60; Height = 60; BackgroundColor = 11;
+        image V56 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P56 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M56 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q57 { Left = 60; Top = 0; Width = 60; Height = 60; BackgroundColor = 2;
+        image V57 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P57 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M57 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q58 { Left = 120; Top = 0; Width = 60; Height = 60; BackgroundColor = 11;
+        image V58 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P58 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M58 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q59 { Left = 180; Top = 0; Width = 60; Height = 60; BackgroundColor = 2;
+        image V59 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P59 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M59 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q60 { Left = 240; Top = 0; Width = 60; Height = 60; BackgroundColor = 11;
+        image V60 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P60 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M60 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q61 { Left = 300; Top = 0; Width = 60; Height = 60; BackgroundColor = 2;
+        image V61 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P61 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M61 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q62 { Left = 360; Top = 0; Width = 60; Height = 60; BackgroundColor = 11;
+        image V62 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P62 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M62 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+    panel Q63 { Left = 420; Top = 0; Width = 60; Height = 60; BackgroundColor = 2;
+        image V63 { Left = 20; Top = 0; Width = 20; Height = 60; Image = 0; }
+        image P63 { Left = 0; Top = 0; Width = 60; Height = 60; Image = 0; }
+        label M63 { Left = 0; Top = 0; Width = 60; Height = 60; Text = ""; TextAlign = 1; FontId = 1; TextColor = 46; }
+    }
+}
+panel Side { Left = 480; Top = 0; Width = 160; Height = 480; BackgroundColor = 41;
+    label Title { Left = 8; Top = 8; Width = 144; Height = 24; Text = "AP6 Chess"; TextAlign = 1; FontId = 1; TextColor = 5; }
+    label Turn { Left = 8; Top = 40; Width = 144; Height = 20; Text = ""; TextAlign = 1; FontId = 0; TextColor = 5; }
+    label State { Left = 8; Top = 62; Width = 144; Height = 20; Text = ""; TextAlign = 1; FontId = 0; TextColor = 46; }
+    label LevelText { Left = 8; Top = 100; Width = 144; Height = 20; Text = ""; TextAlign = 1; FontId = 0; TextColor = 5; }
+    button Level1 { Left = 16; Top = 124; Width = 128; Height = 26; Text = "Beginner"; }
+    button Level2 { Left = 16; Top = 154; Width = 128; Height = 26; Text = "Easy"; }
+    button Level3 { Left = 16; Top = 184; Width = 128; Height = 26; Text = "Medium"; }
+    button Level4 { Left = 16; Top = 214; Width = 128; Height = 26; Text = "Hard"; }
+    button NewGame { Left = 16; Top = 264; Width = 128; Height = 26; Text = "New game"; }
+    label MoveText { Left = 8; Top = 310; Width = 144; Height = 20; Text = ""; TextAlign = 1; FontId = 0; TextColor = 5; }
+    label SearchText { Left = 8; Top = 332; Width = 144; Height = 20; Text = ""; TextAlign = 1; FontId = 2; TextColor = 5; }
+    label NodesText { Left = 8; Top = 352; Width = 144; Height = 20; Text = ""; TextAlign = 1; FontId = 2; TextColor = 5; }
+    label Note { Left = 8; Top = 440; Width = 144; Height = 32; Text = "You play White"; TextAlign = 1; FontId = 2; TextColor = 5; }
+}
