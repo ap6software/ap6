@@ -1,0 +1,703 @@
+number StIdle     = 0;
+number StBlink    = 1;
+number StWalk     = 2;
+number StExplain  = 3;
+number StThink    = 4;
+number StPoint    = 5;
+number StSuccess  = 6;
+number StCelebrate = 7;
+
+number CodeLoop  = 9101;
+number CodeWalk  = 9102;
+
+number CodeExampleCopied      = 9103;
+number CodeExampleCopyFailed  = 9104;
+number CodeExampleCopyUnconfirmed = 9105;
+
+persisted number CurrentLesson = 0;
+
+number Phase     = 0;
+number StepIndex = 0;
+number QIndex    = 0;
+number Chosen    = 0;
+number Answered  = 0;
+
+mutable bool[] Selected = [false, false, false, false, false, false];
+number SelectedCount = 0;
+number FirstWrong    = 0;
+number HaveWrong     = 0;
+number HintIndex = 0;
+
+number StageActor   = 0;
+number StageState   = 0;
+number ArrivalState = 0;
+
+number i = 0;
+number q = 0;
+
+number CopyFor = -1;
+
+ref[] LessonButtons = [Root.Rail.L1,  Root.Rail.L2,  Root.Rail.L3,  Root.Rail.L4,
+                       Root.Rail.L5,  Root.Rail.L6,  Root.Rail.L7,  Root.Rail.L8,
+                       Root.Rail.L9,  Root.Rail.L10, Root.Rail.L11, Root.Rail.L12,
+                       Root.Rail.L13, Root.Rail.L14, Root.Rail.L15];
+
+ref[] LanguageButtons = [Root.TopBar.LangEn, Root.TopBar.LangHe, Root.TopBar.LangRu];
+
+ref[] OptionBox = [Root.Content.QuizPanel.Opt1, Root.Content.QuizPanel.Opt2,
+                   Root.Content.QuizPanel.Opt3, Root.Content.QuizPanel.Opt4,
+                   Root.Content.QuizPanel.Opt5, Root.Content.QuizPanel.Opt6];
+
+ref[] OptionText = [Root.Content.QuizPanel.Opt1.Opt1Text, Root.Content.QuizPanel.Opt2.Opt2Text,
+                    Root.Content.QuizPanel.Opt3.Opt3Text, Root.Content.QuizPanel.Opt4.Opt4Text,
+                    Root.Content.QuizPanel.Opt5.Opt5Text, Root.Content.QuizPanel.Opt6.Opt6Text];
+
+ref[] OptionNormal = [Root.Content.QuizPanel.Opt1.Opt1Normal, Root.Content.QuizPanel.Opt2.Opt2Normal,
+                      Root.Content.QuizPanel.Opt3.Opt3Normal, Root.Content.QuizPanel.Opt4.Opt4Normal,
+                      Root.Content.QuizPanel.Opt5.Opt5Normal, Root.Content.QuizPanel.Opt6.Opt6Normal];
+
+ref[] OptionSelected = [Root.Content.QuizPanel.Opt1.Opt1Selected, Root.Content.QuizPanel.Opt2.Opt2Selected,
+                        Root.Content.QuizPanel.Opt3.Opt3Selected, Root.Content.QuizPanel.Opt4.Opt4Selected,
+                        Root.Content.QuizPanel.Opt5.Opt5Selected, Root.Content.QuizPanel.Opt6.Opt6Selected];
+
+ref[] OptionCorrect = [Root.Content.QuizPanel.Opt1.Opt1Correct, Root.Content.QuizPanel.Opt2.Opt2Correct,
+                       Root.Content.QuizPanel.Opt3.Opt3Correct, Root.Content.QuizPanel.Opt4.Opt4Correct,
+                       Root.Content.QuizPanel.Opt5.Opt5Correct, Root.Content.QuizPanel.Opt6.Opt6Correct];
+
+ref[] OptionIncorrect = [Root.Content.QuizPanel.Opt1.Opt1Incorrect, Root.Content.QuizPanel.Opt2.Opt2Incorrect,
+                         Root.Content.QuizPanel.Opt3.Opt3Incorrect, Root.Content.QuizPanel.Opt4.Opt4Incorrect,
+                         Root.Content.QuizPanel.Opt5.Opt5Incorrect, Root.Content.QuizPanel.Opt6.Opt6Incorrect];
+
+number OptionFirstTop = 130;
+number OptionPitch    = 60;
+
+void PlayState(number actor, number state)
+{
+    StageActor = actor;
+    StageState = state;
+
+    SizeStageFor(actor);
+    Root.Content.StageName.TextResource = ActorNameId[actor];
+
+    if (state == StBlink)
+    {
+        PlayActorState(actor, state, CodeLoop);
+    }
+    else
+    {
+        PlayActorState(actor, state, 0);
+    }
+}
+
+void WalkThenPlay(number actor, number state)
+{
+    StageActor = actor;
+    StageState = StWalk;
+    ArrivalState = state;
+
+    SizeStageFor(actor);
+    Root.Content.StageName.TextResource = ActorNameId[actor];
+
+    PlayActorState(actor, StWalk, CodeWalk);
+}
+
+void ShowPart(number phase)
+{
+    Phase = phase;
+
+    Root.Content.StepPanel.Visible = (phase == 0);
+    Root.Content.QuizPanel.Visible = (phase == 1);
+    Root.Content.DonePanel.Visible = (phase == 2);
+}
+
+number ExampleLanguage = 0;
+
+void PickExampleLanguage()
+{
+    var tag = Language();
+    var cut = IndexOf(tag, ExampleTagSeparator);
+
+    ExampleLanguage = -1;
+    for (number n = 0; n < ExampleLanguages.Count; n = n + 1)
+    {
+        if (ExampleLanguage < 0 && ExampleLanguages[n] == tag)
+        {
+            ExampleLanguage = n;
+        }
+    }
+    if (cut >= 0)
+    {
+
+        var primary = Substring(tag, 0, cut);
+        for (number m = 0; m < ExampleLanguages.Count; m = m + 1)
+        {
+            if (ExampleLanguage < 0 && ExampleLanguages[m] == primary)
+            {
+                ExampleLanguage = m;
+            }
+        }
+    }
+    if (ExampleLanguage < 0)
+    {
+        ExampleLanguage = ExampleDefaultLanguage;
+    }
+}
+
+void ShowExample(number step)
+{
+    Root.Content.StepPanel.Example.Visible = (StepExampleId[step] > 0);
+    Root.Content.StepPanel.BtnCopyExample.Visible = (StepExampleId[step] > 0);
+    Root.Content.StepPanel.CopyStatus.Visible = false;
+    CopyFor = -1;
+
+    if (StepExampleId[step] > 0)
+    {
+        if (IsNull(ValueAt(StepExampleValue, step)))
+        {
+            Root.Content.StepPanel.Example.TextResource = StepExampleId[step];
+        }
+        else
+        {
+            var choices = AsArray(ValueAt(StepExampleValue, step));
+            PickExampleLanguage();
+            if (Count(choices) == 1)
+            {
+                SetValue(Root.Content.StepPanel.Example, ValueAt(choices, 0));
+            }
+            else
+            {
+                SetValue(Root.Content.StepPanel.Example, ValueAt(choices, ExampleLanguage));
+            }
+        }
+    }
+}
+
+void RefitExample()
+{
+    ShowExample(LessonStepFirst[CurrentLesson] + StepIndex);
+}
+
+void ShowStep()
+{
+    i = LessonStepFirst[CurrentLesson] + StepIndex;
+
+    Root.Content.StepPanel.StepText.TextResource = StepTextId[i];
+    ShowExample(i);
+    Root.Content.StepPanel.StepCount.Text = ToText(StepIndex + 1) + " / " + ToText(LessonStepCount[CurrentLesson]);
+
+    Root.Content.StepPanel.BtnBack.Visible = (StepIndex > 0);
+    Root.Content.StepPanel.BtnNext.Visible = (StepIndex + 1 < LessonStepCount[CurrentLesson]);
+    Root.Content.StepPanel.BtnQuiz.Visible = (StepIndex + 1 == LessonStepCount[CurrentLesson]);
+
+    PlayState(StepActor[i], StepState[i]);
+}
+
+void ShowQuestion()
+{
+    q = LessonQFirst[CurrentLesson] + QIndex;
+
+    Root.Content.QuizPanel.QText.TextResource = QTextId[q];
+
+    Root.Content.QuizPanel.QHint.TextResource = UiChooseAnswersFor[QMultiSelect[q]];
+
+    Chosen = 0;
+    Answered = 0;
+    SelectedCount = 0;
+
+    for (number o = 0; o < OptionBox.Count; o = o + 1)
+    {
+        Selected[o] = false;
+
+        if (o < QOptCount[q])
+        {
+            OptionBox[o].Visible = true;
+            OptionText[o].TextResource = OptTextId[QOptFirst[q] + o];
+
+            OptionNormal[o].Visible = true;
+            OptionSelected[o].Visible = false;
+            OptionCorrect[o].Visible = false;
+            OptionIncorrect[o].Visible = false;
+        }
+        else
+        {
+            OptionBox[o].Visible = false;
+        }
+    }
+
+    i = OptionFirstTop + QOptCount[q] * OptionPitch + 12;
+
+    Root.Content.QuizPanel.Verdict.Top = i;
+    Root.Content.QuizPanel.Why.Top = i + 28;
+    Root.Content.QuizPanel.BtnRetry.Top = i + 120;
+    Root.Content.QuizPanel.BtnContinue.Top = i + 120;
+    Root.Content.QuizPanel.BtnCheck.Top = i + 120;
+    Root.Content.QuizPanel.BtnHint.Top = i + 120;
+
+    HintIndex = 0;
+    Root.Content.QuizPanel.BtnHint.Visible = (QHintCount[q] > 0);
+
+    Root.Content.QuizPanel.Verdict.Visible = false;
+    Root.Content.QuizPanel.Why.Visible = false;
+    Root.Content.QuizPanel.BtnRetry.Visible = false;
+    Root.Content.QuizPanel.BtnContinue.Visible = false;
+    Root.Content.QuizPanel.BtnCheck.Visible = false;
+
+    PlayState(TeacherActor, StThink);
+}
+
+void ShowDone()
+{
+    if (LessonStatus[CurrentLesson] == 0)
+    {
+        Root.Content.DonePanel.DoneText.TextResource = LessonSummaryId[CurrentLesson];
+    }
+    else
+    {
+        Root.Content.DonePanel.DoneText.TextResource = UiQuizPending;
+    }
+
+    Root.Content.DonePanel.BtnNextLesson.Visible = (CurrentLesson + 1 < LessonCount);
+
+    ShowPart(2);
+
+    if (LessonQCount[CurrentLesson] > 0)
+    {
+        PlayState(TeacherActor, StCelebrate);
+    }
+    else
+    {
+        PlayState(TeacherActor, StBlink);
+    }
+}
+
+void OpenLesson(number index, number walkIn)
+{
+    CurrentLesson = index;
+    StepIndex = 0;
+    QIndex = 0;
+
+    Root.TopBar.Progress.TextResource = LessonProgressId[index];
+    Root.Content.LessonTitle.TextResource = LessonTitleId[index];
+    Root.Content.Goal.TextResource = LessonGoalId[index];
+
+    ShowPart(0);
+
+    i = LessonStepFirst[index];
+
+    Root.Content.StepPanel.StepText.TextResource = StepTextId[i];
+    Root.Content.StepPanel.StepCount.Text = ToText(1) + " / " + ToText(LessonStepCount[index]);
+    Root.Content.StepPanel.BtnBack.Visible = false;
+    Root.Content.StepPanel.BtnNext.Visible = (LessonStepCount[index] > 1);
+    Root.Content.StepPanel.BtnQuiz.Visible = (LessonStepCount[index] == 1);
+
+    ShowExample(i);
+
+    if (walkIn == 1)
+    {
+
+        WalkThenPlay(StepActor[i], StepState[i]);
+    }
+    else
+    {
+        PlayState(StepActor[i], StepState[i]);
+    }
+}
+
+on Load
+{
+    Root.TopBar.Title.TextResource = UiAppTitle;
+
+    Root.TopBar.Subtitle.TextResource = CourseSubtitleId;
+    Root.Content.GoalCaption.TextResource = UiGoalLabel;
+
+    Root.Content.StepPanel.BtnBack.TextResource = UiBack;
+    Root.Content.StepPanel.BtnNext.TextResource = UiNext;
+    Root.Content.StepPanel.BtnQuiz.TextResource = UiToQuestions;
+    Root.Content.StepPanel.BtnCopyExample.TextResource = UiCopyExample;
+
+    Root.Content.QuizPanel.BtnHint.TextResource = UiHint;
+    Root.Content.QuizPanel.BtnRetry.TextResource = UiRetry;
+    Root.Content.QuizPanel.BtnContinue.TextResource = UiContinue;
+    Root.Content.QuizPanel.BtnCheck.TextResource = UiCheck;
+
+    Root.Content.DonePanel.BtnNextLesson.TextResource = UiNextLesson;
+
+    Root.TopBar.LangEn.TextResource = UiLangEn;
+    Root.TopBar.LangHe.TextResource = UiLangHe;
+    Root.TopBar.LangRu.TextResource = UiLangRu;
+
+    for (number n = 0; n < LanguageButtons.Count; n = n + 1)
+    {
+        LanguageButtons[n].Visible = (CourseOffersLanguage[n] == 1);
+    }
+
+    for (number n = 0; n < LessonButtons.Count; n = n + 1)
+    {
+        if (n < LessonCount)
+        {
+            LessonButtons[n].Visible = true;
+
+            LessonButtons[n].TextResource = LessonRailTitleId[n];
+        }
+        else
+        {
+            LessonButtons[n].Visible = false;
+        }
+    }
+
+    OpenLesson(CurrentLesson, 0);
+}
+
+on Root.Rail.Click(ref source)
+{
+    for (number n = 0; n < LessonButtons.Count; n = n + 1)
+    {
+        if (source == LessonButtons[n])
+        {
+            OpenLesson(n, 1);
+        }
+    }
+}
+
+on Root.Content.StepPanel.BtnNext.Click
+{
+    if (StepIndex + 1 < LessonStepCount[CurrentLesson])
+    {
+        StepIndex = StepIndex + 1;
+        ShowStep();
+    }
+}
+
+on Root.Content.StepPanel.BtnBack.Click
+{
+    if (StepIndex > 0)
+    {
+        StepIndex = StepIndex - 1;
+        ShowStep();
+    }
+}
+
+on Root.Content.StepPanel.BtnQuiz.Click
+{
+    if (LessonQCount[CurrentLesson] > 0)
+    {
+        QIndex = 0;
+        ShowPart(1);
+        ShowQuestion();
+
+        WalkThenPlay(TeacherActor, StThink);
+    }
+    else
+    {
+        ShowDone();
+    }
+}
+
+on Root.Content.QuizPanel.Click(ref source)
+{
+    if (Answered == 0)
+    {
+        for (number o = 0; o < OptionBox.Count; o = o + 1)
+        {
+
+            if (source == OptionText[o] || source == OptionBox[o]
+                || source == OptionNormal[o] || source == OptionSelected[o]
+                || source == OptionCorrect[o] || source == OptionIncorrect[o])
+            {
+                q = LessonQFirst[CurrentLesson] + QIndex;
+
+                if (QMultiSelect[q] > 0)
+                {
+                    ToggleSelected(o);
+                }
+                else
+                {
+                    Chosen = Bit[o];
+                    Answered = 1;
+
+                    Root.Content.QuizPanel.Verdict.Visible = true;
+                    Root.Content.QuizPanel.Why.Visible = true;
+                    Root.Content.QuizPanel.BtnHint.Visible = false;
+
+                    OptionNormal[o].Visible = false;
+
+                    if (Chosen == QCorrectMask[q])
+                    {
+                        OptionCorrect[o].Visible = true;
+                    }
+                    else
+                    {
+                        OptionIncorrect[o].Visible = true;
+                    }
+
+                    if (Chosen == QCorrectMask[q])
+                    {
+                        Root.Content.QuizPanel.Verdict.TextResource = UiCorrect;
+                        Root.Content.QuizPanel.Why.TextResource = QWhyId[q];
+                        Root.Content.QuizPanel.BtnContinue.Visible = true;
+
+                        PlayState(TeacherActor, StSuccess);
+                    }
+                    else
+                    {
+
+                        Root.Content.QuizPanel.Verdict.TextResource = UiWrong;
+                        Root.Content.QuizPanel.Why.TextResource = OptWhyId[QOptFirst[q] + o];
+                        Root.Content.QuizPanel.BtnRetry.Visible = true;
+
+                        PlayState(TeacherActor, StExplain);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void ToggleSelected(number option)
+{
+    if (Selected[option])
+    {
+        Selected[option] = false;
+        SelectedCount = SelectedCount - 1;
+        OptionSelected[option].Visible = false;
+        OptionNormal[option].Visible = true;
+    }
+    else
+    {
+        Selected[option] = true;
+        SelectedCount = SelectedCount + 1;
+        OptionNormal[option].Visible = false;
+        OptionSelected[option].Visible = true;
+    }
+
+    Root.Content.QuizPanel.BtnCheck.Visible = (SelectedCount == QMultiSelect[q]);
+}
+
+on Root.Content.QuizPanel.BtnCheck.Click
+{
+    q = LessonQFirst[CurrentLesson] + QIndex;
+
+    if (Answered == 0 && QMultiSelect[q] > 0 && SelectedCount == QMultiSelect[q])
+    {
+        Chosen = 0;
+        HaveWrong = 0;
+        FirstWrong = 0;
+
+        for (number o = 0; o < OptionBox.Count; o = o + 1)
+        {
+            if (Selected[o])
+            {
+                Chosen = Chosen + Bit[o];
+                OptionSelected[o].Visible = false;
+
+                if (QCorrectMask[q] mod (Bit[o] * 2) >= Bit[o])
+                {
+                    OptionCorrect[o].Visible = true;
+                }
+                else
+                {
+                    OptionIncorrect[o].Visible = true;
+
+                    if (HaveWrong == 0)
+                    {
+                        FirstWrong = o;
+                        HaveWrong = 1;
+                    }
+                }
+            }
+        }
+
+        Answered = 1;
+
+        Root.Content.QuizPanel.Verdict.Visible = true;
+        Root.Content.QuizPanel.Why.Visible = true;
+        Root.Content.QuizPanel.BtnHint.Visible = false;
+        Root.Content.QuizPanel.BtnCheck.Visible = false;
+
+        if (Chosen == QCorrectMask[q])
+        {
+            Root.Content.QuizPanel.Verdict.TextResource = UiCorrect;
+            Root.Content.QuizPanel.Why.TextResource = QWhyId[q];
+            Root.Content.QuizPanel.BtnContinue.Visible = true;
+
+            PlayState(TeacherActor, StSuccess);
+        }
+        else
+        {
+            Root.Content.QuizPanel.Verdict.TextResource = UiWrong;
+            Root.Content.QuizPanel.Why.TextResource = OptWhyId[QOptFirst[q] + FirstWrong];
+            Root.Content.QuizPanel.BtnRetry.Visible = true;
+
+            PlayState(TeacherActor, StExplain);
+        }
+    }
+}
+
+on Root.Content.QuizPanel.BtnHint.Click
+{
+    if (Answered == 0)
+    {
+        q = LessonQFirst[CurrentLesson] + QIndex;
+
+        if (QHintCount[q] > 0)
+        {
+            i = QHintFirst[q] + HintIndex;
+
+            Root.Content.QuizPanel.Verdict.Visible = false;
+            Root.Content.QuizPanel.Why.Visible = true;
+            Root.Content.QuizPanel.Why.TextResource = HintTextId[i];
+
+            PlayState(HintActor[i], StExplain);
+
+            HintIndex = HintIndex + 1;
+
+            if (HintIndex >= QHintCount[q])
+            {
+                HintIndex = 0;
+            }
+        }
+    }
+}
+
+on Root.Content.QuizPanel.BtnRetry.Click
+{
+    ShowQuestion();
+}
+
+on Root.Content.QuizPanel.BtnContinue.Click
+{
+    if (QIndex + 1 < LessonQCount[CurrentLesson])
+    {
+        QIndex = QIndex + 1;
+        ShowQuestion();
+    }
+    else
+    {
+        ShowDone();
+    }
+}
+
+on Root.Content.DonePanel.BtnNextLesson.Click
+{
+    if (CurrentLesson + 1 < LessonCount)
+    {
+        OpenLesson(CurrentLesson + 1, 1);
+    }
+}
+
+on Code(9101)
+{
+    if (StageState == StBlink)
+    {
+        PlayActorState(StageActor, StBlink, CodeLoop);
+    }
+}
+
+on Code(9102)
+{
+    PlayState(StageActor, ArrivalState);
+}
+
+on Root.Content.StepPanel.BtnCopyExample.Click
+{
+    CopyFor = LessonStepFirst[CurrentLesson] + StepIndex;
+    CopyText(Root.Content.StepPanel.Example, CodeExampleCopied, CodeExampleCopyFailed, CodeExampleCopyUnconfirmed);
+}
+
+on Code(9103)
+{
+    if (CopyFor == LessonStepFirst[CurrentLesson] + StepIndex)
+    {
+        Root.Content.StepPanel.CopyStatus.TextResource = UiExampleCopied;
+        Root.Content.StepPanel.CopyStatus.Visible = true;
+    }
+}
+
+on Code(9104)
+{
+    if (CopyFor == LessonStepFirst[CurrentLesson] + StepIndex)
+    {
+        Root.Content.StepPanel.CopyStatus.TextResource = UiExampleCopyFailed;
+        Root.Content.StepPanel.CopyStatus.Visible = true;
+    }
+}
+
+on Code(9105)
+{
+    if (CopyFor == LessonStepFirst[CurrentLesson] + StepIndex)
+    {
+        Root.Content.StepPanel.CopyStatus.TextResource = UiExampleCopyUnconfirmed;
+        Root.Content.StepPanel.CopyStatus.Visible = true;
+    }
+}
+
+ref[] Mirrored =
+[
+    Root.Rail,                          Root.Content,
+
+    Root.TopBar.Title,                  Root.TopBar.Subtitle,
+    Root.TopBar.Progress,               Root.TopBar.LangRu,
+    Root.TopBar.LangHe,                 Root.TopBar.LangEn,
+
+    Root.Content.LessonTitle,           Root.Content.GoalCaption,
+    Root.Content.Goal,                  Root.Content.Stage,
+    Root.Content.StageName,             Root.Content.StepPanel,
+    Root.Content.QuizPanel,             Root.Content.DonePanel,
+
+    Root.Content.StepPanel.StepText,    Root.Content.StepPanel.Example,
+    Root.Content.StepPanel.StepCount,   Root.Content.StepPanel.BtnBack,
+    Root.Content.StepPanel.BtnNext,     Root.Content.StepPanel.BtnQuiz,
+    Root.Content.StepPanel.BtnCopyExample, Root.Content.StepPanel.CopyStatus,
+
+    Root.Content.QuizPanel.QText,       Root.Content.QuizPanel.QHint,
+    Root.Content.QuizPanel.Verdict,     Root.Content.QuizPanel.Why,
+    Root.Content.QuizPanel.BtnRetry,    Root.Content.QuizPanel.BtnContinue,
+    Root.Content.QuizPanel.BtnHint,     Root.Content.QuizPanel.BtnCheck,
+
+    Root.Content.DonePanel.DoneText,    Root.Content.DonePanel.BtnNextLesson
+];
+
+ref[] MirroredParent =
+[
+    Root,                               Root,
+
+    Root.TopBar,                        Root.TopBar,
+    Root.TopBar,                        Root.TopBar,
+    Root.TopBar,                        Root.TopBar,
+
+    Root.Content,                       Root.Content,
+    Root.Content,                       Root.Content,
+    Root.Content,                       Root.Content,
+    Root.Content,                       Root.Content,
+
+    Root.Content.StepPanel,             Root.Content.StepPanel,
+    Root.Content.StepPanel,             Root.Content.StepPanel,
+    Root.Content.StepPanel,             Root.Content.StepPanel,
+    Root.Content.StepPanel,             Root.Content.StepPanel,
+
+    Root.Content.QuizPanel,             Root.Content.QuizPanel,
+    Root.Content.QuizPanel,             Root.Content.QuizPanel,
+    Root.Content.QuizPanel,             Root.Content.QuizPanel,
+    Root.Content.QuizPanel,             Root.Content.QuizPanel,
+
+    Root.Content.DonePanel,             Root.Content.DonePanel
+];
+
+number MirroredNow = 0;
+
+void ApplyLayoutDirection(number rtl)
+{
+    if (rtl != MirroredNow)
+    {
+        for (number n = 0; n < Mirrored.Count; n = n + 1)
+        {
+            Mirrored[n].Left = MirroredParent[n].Width - Mirrored[n].Left - Mirrored[n].Width;
+        }
+
+        MirroredNow = rtl;
+    }
+}
+
+on Root.TopBar.LangEn.Click { SetLanguage("en"); ApplyLayoutDirection(0); RefitExample(); }
+on Root.TopBar.LangHe.Click { SetLanguage("he"); ApplyLayoutDirection(1); RefitExample(); }
+on Root.TopBar.LangRu.Click { SetLanguage("ru"); ApplyLayoutDirection(0); RefitExample(); }

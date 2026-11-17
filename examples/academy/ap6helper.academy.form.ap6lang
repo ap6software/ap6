@@ -1,0 +1,158 @@
+panel Root
+{
+    Left = 0; Top = 0; Width = 1280; Height = 800; BackgroundColor = 41;
+
+    panel TopBar
+    {
+        Left = 0; Top = 0; Width = 1280; Height = 84;
+
+        label Title    { Left = 24; Top = 12; Width = 600; Height = 32; TextAlign = -1; FontId = 3; TextColor = 48; TextFit = 0; }
+        label Subtitle { Left = 24; Top = 48; Width = 700; Height = 22; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 0; }
+        label Progress { Left = 900; Top = 24; Width = 356; Height = 28; TextAlign = 1; FontId = 0; TextColor = 48; TextFit = 0; }
+
+        button LangRu { Left =  910; Top = 50; Width = 110; Height = 26; }
+        button LangHe { Left = 1028; Top = 50; Width = 110; Height = 26; }
+        button LangEn { Left = 1146; Top = 50; Width = 110; Height = 26; }
+    }
+
+    panel Rail
+    {
+        Left = 0; Top = 84; Width = 244; Height = 716;
+
+        button L1  { Left = 12; Top =  10; Width = 220; Height = 38; }
+        button L2  { Left = 12; Top =  56; Width = 220; Height = 38; }
+        button L3  { Left = 12; Top = 102; Width = 220; Height = 38; }
+        button L4  { Left = 12; Top = 148; Width = 220; Height = 38; }
+        button L5  { Left = 12; Top = 194; Width = 220; Height = 38; }
+        button L6  { Left = 12; Top = 240; Width = 220; Height = 38; }
+        button L7  { Left = 12; Top = 286; Width = 220; Height = 38; }
+        button L8  { Left = 12; Top = 332; Width = 220; Height = 38; }
+        button L9  { Left = 12; Top = 378; Width = 220; Height = 38; }
+        button L10 { Left = 12; Top = 424; Width = 220; Height = 38; }
+        button L11 { Left = 12; Top = 470; Width = 220; Height = 38; }
+        button L12 { Left = 12; Top = 516; Width = 220; Height = 38; }
+        button L13 { Left = 12; Top = 562; Width = 220; Height = 38; }
+        button L14 { Left = 12; Top = 608; Width = 220; Height = 38; }
+        button L15 { Left = 12; Top = 654; Width = 220; Height = 38; }
+    }
+
+    panel Content
+    {
+        Left = 244; Top = 84; Width = 1036; Height = 716;
+
+        label LessonTitle { Left =  24; Top =  8; Width = 988; Height = 32; TextAlign = -1; FontId = 3; TextColor = 48; TextFit = 0; }
+        label GoalCaption { Left =  24; Top = 46; Width =  80; Height = 22; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 0; }
+
+        label Goal        { Left = 108; Top = 46; Width = 904; Height = 48; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 2; }
+
+        image Stage     { Left = 24; Top =  96; Width = 350; Height = 360; Image = 0; }
+        label StageName { Left = 24; Top = 462; Width = 342; Height = 22; TextAlign = 1; FontId = 0; TextColor = 48; TextFit = 0; }
+
+        panel StepPanel
+        {
+            Left = 400; Top = 96; Width = 612; Height = 612;
+
+            label StepText  { Left =   0; Top =   0; Width = 612; Height = 144; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 2; }
+
+            richtext Example { Left = 0; Top = 152; Width = 612; Height = 364; FontId = 4; TextColor = 48;
+                               ReadOnly = true; BackgroundColor = 41; Borderless = true; NoWrap = true; }
+
+            button BtnCopyExample { Left =   0; Top = 524; Width = 200; Height = 38; }
+            label  CopyStatus     { Left = 210; Top = 532; Width = 402; Height = 22; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 0; }
+
+            label StepCount { Left = 510; Top = 577; Width = 102; Height =  24; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 0; }
+
+            button BtnBack { Left =   0; Top = 570; Width = 140; Height = 38; }
+            button BtnNext { Left = 150; Top = 570; Width = 140; Height = 38; }
+            button BtnQuiz { Left = 300; Top = 570; Width = 200; Height = 38; }
+        }
+
+        panel QuizPanel
+        {
+
+            Left = 400; Top = 96; Width = 612; Height = 620;
+
+            label QText { Left = 0; Top =  0; Width = 612; Height = 104; TextAlign = -1; FontId = 3; TextColor = 48; TextFit = 2; }
+            label QHint { Left = 0; Top = 106; Width = 612; Height = 22; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 0; }
+
+            panel Opt1
+            {
+                Left = 0; Top = 130; Width = 612; Height = 54;
+                panel Opt1Normal    { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 45; }
+                panel Opt1Selected  { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 120; }
+                panel Opt1Correct   { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 33; }
+                panel Opt1Incorrect { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 13; }
+                label Opt1Text      { Left = 0; Top = 0; Width = 612; Height = 54; TextAlign = 1; FontId = 0; TextColor = 5; TextFit = 2; }
+            }
+
+            panel Opt2
+            {
+                Left = 0; Top = 190; Width = 612; Height = 54;
+                panel Opt2Normal    { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 45; }
+                panel Opt2Selected  { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 120; }
+                panel Opt2Correct   { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 33; }
+                panel Opt2Incorrect { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 13; }
+                label Opt2Text      { Left = 0; Top = 0; Width = 612; Height = 54; TextAlign = 1; FontId = 0; TextColor = 5; TextFit = 2; }
+            }
+
+            panel Opt3
+            {
+                Left = 0; Top = 250; Width = 612; Height = 54;
+                panel Opt3Normal    { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 45; }
+                panel Opt3Selected  { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 120; }
+                panel Opt3Correct   { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 33; }
+                panel Opt3Incorrect { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 13; }
+                label Opt3Text      { Left = 0; Top = 0; Width = 612; Height = 54; TextAlign = 1; FontId = 0; TextColor = 5; TextFit = 2; }
+            }
+
+            panel Opt4
+            {
+                Left = 0; Top = 310; Width = 612; Height = 54;
+                panel Opt4Normal    { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 45; }
+                panel Opt4Selected  { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 120; }
+                panel Opt4Correct   { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 33; }
+                panel Opt4Incorrect { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 13; }
+                label Opt4Text      { Left = 0; Top = 0; Width = 612; Height = 54; TextAlign = 1; FontId = 0; TextColor = 5; TextFit = 2; }
+            }
+
+            panel Opt5
+            {
+                Left = 0; Top = 370; Width = 612; Height = 54;
+                panel Opt5Normal    { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 45; }
+                panel Opt5Selected  { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 120; }
+                panel Opt5Correct   { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 33; }
+                panel Opt5Incorrect { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 13; }
+                label Opt5Text      { Left = 0; Top = 0; Width = 612; Height = 54; TextAlign = 1; FontId = 0; TextColor = 5; TextFit = 2; }
+            }
+
+            panel Opt6
+            {
+                Left = 0; Top = 430; Width = 612; Height = 54;
+                panel Opt6Normal    { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 45; }
+                panel Opt6Selected  { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 120; }
+                panel Opt6Correct   { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 33; }
+                panel Opt6Incorrect { Left = 0; Top = 0; Width = 612; Height = 54; BackgroundColor = 13; }
+                label Opt6Text      { Left = 0; Top = 0; Width = 612; Height = 54; TextAlign = 1; FontId = 0; TextColor = 5; TextFit = 2; }
+            }
+
+            label Verdict { Left = 0; Top = 460; Width = 612; Height = 24; TextAlign = -1; FontId = 3; TextColor = 48; TextFit = 0; }
+            label Why     { Left = 0; Top = 488; Width = 612; Height = 84; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 2; }
+
+            button BtnRetry    { Left =   0; Top = 580; Width = 180; Height = 38; }
+            button BtnContinue { Left = 190; Top = 580; Width = 200; Height = 38; }
+
+            button BtnCheck    { Left = 190; Top = 580; Width = 200; Height = 38; }
+
+            button BtnHint { Left = 400; Top = 580; Width = 200; Height = 38; }
+        }
+
+        panel DonePanel
+        {
+            Left = 400; Top = 96; Width = 612; Height = 600;
+
+            label DoneText { Left = 0; Top = 0; Width = 612; Height = 240; TextAlign = -1; FontId = 0; TextColor = 48; TextFit = 2; }
+
+            button BtnNextLesson { Left = 0; Top = 260; Width = 220; Height = 38; }
+        }
+    }
+}

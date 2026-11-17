@@ -10,7 +10,7 @@ Open them in the browser, no install: **https://ap6software.com/apps/**
 
 | Application | What it shows | Open | AP6 Language source |
 |---|---|---|---|
-| AI Academy | An interactive e-learning course with lessons and examples | [open](https://ap6software.com/apps/launch?id=edu.academy) | |
+| AI Academy | An interactive e-learning course with lessons and examples | [open](https://ap6software.com/apps/launch?id=edu.academy) | [examples/academy](examples/academy) |
 | AWS Developer Academy | A course on AWS development | [open](https://ap6software.com/apps/launch?id=edu.academy.aws) | |
 | AWS Developer Labs | Hands-on labs for the AWS course | [open](https://ap6software.com/apps/launch?id=edu.academy.aws-labs) | |
 | Claude API in C# | A course on calling the Claude API from C# | [open](https://ap6software.com/apps/launch?id=edu.academy.claude-api) | |

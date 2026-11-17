@@ -1,0 +1,43 @@
+void PlayActorState(number actor, number state, number code)
+{
+    if (actor == 0)
+    {
+        if (state == 0) { Sequence(Stage, images: HelperIdle, frameTime: HelperFrameTime, code: code); }
+        if (state == 1) { Sequence(Stage, images: HelperBlink, frameTime: HelperFrameTime, code: code); }
+        if (state == 2) { Sequence(Stage, images: HelperWalk, frameTime: HelperFrameTime, code: code); }
+        if (state == 3) { Sequence(Stage, images: HelperExplain, frameTime: HelperFrameTime, code: code); }
+        if (state == 4) { Sequence(Stage, images: HelperThink, frameTime: HelperFrameTime, code: code); }
+        if (state == 5) { Sequence(Stage, images: HelperPoint, frameTime: HelperFrameTime, code: code); }
+        if (state == 6) { Sequence(Stage, images: HelperSuccess, frameTime: HelperFrameTime, code: code); }
+        if (state == 7) { Sequence(Stage, images: HelperCelebrate, frameTime: HelperFrameTime, code: code); }
+    }
+    if (actor == 1)
+    {
+        if (state == 0) { Sequence(Stage, images: ClaudeAIIdle, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 1) { Sequence(Stage, images: ClaudeAIBlink, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 2) { Sequence(Stage, images: ClaudeAIWalk, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 3) { Sequence(Stage, images: ClaudeAIExplain, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 4) { Sequence(Stage, images: ClaudeAIThink, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 5) { Sequence(Stage, images: ClaudeAIPoint, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 6) { Sequence(Stage, images: ClaudeAIIdle, frameTime: ClaudeAIFrameTime, code: code); }
+        if (state == 7) { Sequence(Stage, images: ClaudeAIIdle, frameTime: ClaudeAIFrameTime, code: code); }
+    }
+    if (actor == 2)
+    {
+        if (state == 0) { Sequence(Stage, images: CodexAIIdle, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 1) { Sequence(Stage, images: CodexAIBlink, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 2) { Sequence(Stage, images: CodexAIWalk, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 3) { Sequence(Stage, images: CodexAIExplain, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 4) { Sequence(Stage, images: CodexAIThink, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 5) { Sequence(Stage, images: CodexAIPoint, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 6) { Sequence(Stage, images: CodexAIIdle, frameTime: CodexAIFrameTime, code: code); }
+        if (state == 7) { Sequence(Stage, images: CodexAIIdle, frameTime: CodexAIFrameTime, code: code); }
+    }
+}
+
+void SizeStageFor(number actor)
+{
+    if (actor == 0) { Stage.Width = HelperFrameWidth; Stage.Height = HelperFrameHeight; }
+    if (actor == 1) { Stage.Width = ClaudeAIFrameWidth; Stage.Height = ClaudeAIFrameHeight; }
+    if (actor == 2) { Stage.Width = CodexAIFrameWidth; Stage.Height = CodexAIFrameHeight; }
+}
