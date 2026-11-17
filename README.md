@@ -19,8 +19,22 @@ Open them in the browser, no install: **https://ap6software.com/apps/**
 | Chess | Chess against the computer |
 | GAME1 | A small game |
 
+## Pictures
+
+**AI Academy**: lessons with the AP6 Helper, in English, Hebrew and Russian
+
+![AI Academy](images/academy.png)
+
+**Chess**: four levels, played against the computer
+
+![AP6 Chess](images/chess.png)
+
+**AP6 Gallery**: a 3D room with framed pictures
+
+![AP6 Gallery](images/gallery.jpg)
+
 ## What is in this repository
-- This page. Pictures and short videos of the demos will follow.
+- This page and the pictures above. Short videos of the demos will follow.
 - No source code. AP6 is proprietary; see LICENSE.md.
 
 ## Contact
